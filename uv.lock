@@ -138,6 +138,7 @@ dependencies = [
     { name = "boto3" },
     { name = "dotenv" },
     { name = "fastapi", extra = ["standard"] },
+    { name = "pydantic" },
     { name = "strands-agents" },
 ]
 
@@ -153,6 +154,7 @@ requires-dist = [
     { name = "boto3", specifier = ">=1.38.44" },
     { name = "dotenv", specifier = ">=0.9.9" },
     { name = "fastapi", extras = ["standard"], specifier = ">=0.115.13" },
+    { name = "pydantic", specifier = ">=2.11.7" },
     { name = "strands-agents", specifier = ">=0.1.9" },
 ]
 
