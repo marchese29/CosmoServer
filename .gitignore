@@ -1,0 +1,25 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+# Dotenv file
+.env
+
+# VS Code Things
+.vscode/
+
+# Roo Things
+.roomodes
+.roo/
+memory-bank/
+
+# Cline Things
+.clinerules
+.clineignore
