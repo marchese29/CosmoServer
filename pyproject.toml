@@ -5,18 +5,20 @@ description = "Cosmo server leveraging LLM's to automate your home"
 readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
-    "boto3>=1.38.44",
+    "boto3>=1.38.45",
     "dotenv>=0.9.9",
-    "fastapi[standard]>=0.115.13",
+    "fastapi[standard]>=0.115.14",
+    "mcp>=1.10.0",
     "pydantic>=2.11.7",
     "strands-agents>=0.1.9",
+    "strands-agents-tools>=0.1.7",
 ]
 
 [dependency-groups]
 dev = [
     "strands-agents-builder>=0.1.4",
     "pyright>=1.1.390",
-    "ruff>=0.8.0",
+    "ruff>=0.12.1",
 ]
 
 [tool.pyright]
