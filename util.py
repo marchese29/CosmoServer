@@ -12,8 +12,7 @@ class InitItem[T]:
         self._item = item
 
     def get(self) -> T:
-        if self._item is None:
-            raise AttributeError("InitItem was not initialized")
+        assert self._item is not None
         return self._item
 
 
