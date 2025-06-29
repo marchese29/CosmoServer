@@ -26,6 +26,7 @@ class EnvKey(StrEnum):
 
     # Agent Configuration
     MODEL_ID = "DEFAULT_BEDROCK_MODEL_ID"
+    SUMMARY_MODEL_ID = "RESPONDER_BEDROCK_MODEL_ID"
 
 
 def get_env_required(key: EnvKey) -> str:

@@ -4,31 +4,16 @@ from typing import Annotated
 
 from dotenv import load_dotenv
 from fastapi import Depends, FastAPI
-from pydantic import BaseModel
 from strands import Agent
 
 import util
 from agent import get_agent, initialize_agent
 from mcps import MCPServer
+from models.api import CosmoRequest, CosmoResponse
 from util import EnvKey
 
-logger = logging.getLogger(__name__)
-
-
-class CosmoRequest(BaseModel):
-    """Request to the Cosmo server"""
-
-    message: str
-
-
-class HelloResponse(BaseModel):
-    """Response from the hello endpoint"""
-
-    name: str
-    anagram: str
-
-
 load_dotenv()
+logger = logging.getLogger(__name__)
 
 
 @asynccontextmanager
@@ -54,17 +39,33 @@ def root() -> str:
 
 
 @app.get("/hello/{first_name}/{middle_name}/{last_name}")
-def anagram_greeter(first_name: str, middle_name: str, last_name: str) -> HelloResponse:
+def anagram_greeter(first_name: str, middle_name: str, last_name: str) -> str:
     agent = Agent(model=util.get_env_required(EnvKey.MODEL_ID))
-    return agent.structured_output(
-        HelloResponse,
-        f"Come up with a fun anagram for '{first_name} {middle_name} {last_name}'",
+    resp = agent(
+        f"Come up with a fun anagram for '{first_name} {middle_name} {last_name}' "
+        "Only use letters the same number of times they appear in the name"
     )
+    return resp.message["content"][0]["text"]  # type: ignore
 
 
 @app.post("/user_message")
 async def handle_user_message(
     request: CosmoRequest, agent: Annotated[Agent, Depends(get_agent)]
-) -> str:
+) -> CosmoResponse:
     """Endpoint which handles messages from the user."""
-    return agent(request.message).message["content"][0]["text"]  # type: ignore
+    agent(request.message)
+
+    # Use the summarizer agent to decide how to respond to the user based on the most
+    # recent conversation turn
+    return agent.structured_output(
+        CosmoResponse,
+        (
+            "Respond to the user by either playing an acknowledgement sound, or "
+            "providint the text to read aloud to them.  This will be the first thing "
+            "they hear since their initial request.  If their request is simple or your "
+            "response is very short, then simply acknowledge, otherwise give them an "
+            "appropriate answer.  The user likely doesn't care to hear about your "
+            "thinking process or which tools you used.  In any case, you may include "
+            "metadata in the response for your own future reference if you want."
+        ),
+    )
