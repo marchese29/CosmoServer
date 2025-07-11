@@ -29,7 +29,6 @@ def initialize_agent():
         Agent(  # type: ignore
             model=bedrock_model,
             tools=MCPServer.HUBITAT.tools() + MCPServer.RULES.tools(),
-            max_parallel_tools=4,
             system_prompt=_system_prompt(),
         )
     )
