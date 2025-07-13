@@ -14,14 +14,11 @@ class MCPServer(Enum):
     HUBITAT = MCPClient(
         lambda: stdio_client(
             StdioServerParameters(
-                command="uv",
+                command="uvx",
                 args=[
-                    "run",
-                    "--project",
-                    "/Users/daniel/Workplace/HubitatAutomationMCP",
-                    "fastmcp",
-                    "run",
-                    "/Users/daniel/Workplace/HubitatAutomationMCP/main.py",
+                    "--from",
+                    "git+https://github.com/marchese29/HubitatAutomationMCP",
+                    "he-mcp",
                 ],
                 env={
                     "HE_ADDRESS": util.get_env_required(EnvKey.HUBITAT_ADDRESS),
