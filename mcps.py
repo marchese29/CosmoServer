@@ -31,14 +31,11 @@ class MCPServer(Enum):
     RULES = MCPClient(
         lambda: stdio_client(
             StdioServerParameters(
-                command="uv",
+                command="uvx",
                 args=[
-                    "run",
-                    "--project",
-                    "/Users/daniel/Workplace/HubitatRulesMCP",
-                    "fastmcp",
-                    "run",
-                    "/Users/daniel/Workplace/HubitatRulesMCP/main.py",
+                    "--from",
+                    "git+https://github.com/marchese29/HubitatRulesMCP",
+                    "hubitat-rules",
                 ],
                 env={
                     "HE_ADDRESS": util.get_env_required(EnvKey.HUBITAT_ADDRESS),
