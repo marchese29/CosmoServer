@@ -11,6 +11,8 @@ from fastapi import APIRouter, FastAPI
 from database import engine
 from database.base import Base
 from routes.crud import router as crud_router
+from routes.rpc import router as rpc_router
+from startup import auto_install_database_rules
 from util import AsyncCreatable, InitItem
 
 load_dotenv()
@@ -27,16 +29,14 @@ async def lifespan(app: FastAPI):
     Base.metadata.create_all(bind=engine)
     logger.info("Database initialized")
 
-    logger.info("Setting up CRUD routers")
-    # Register our custom CRUD router
-    app.include_router(crud_router)
-    logger.info("CRUD routers registered")
-
     logger.info("Initializing Core Cosmo Components")
     cosmo_engine = ConditionEngine()
     PLUGIN_SERVICE.initialize(PluginService(cosmo_engine))
     RULE_MANAGER.initialize(RuleManager(cosmo_engine, PLUGIN_SERVICE.get()))
     logger.info("Core components initialized")
+
+    # Auto-install database rules
+    auto_install_database_rules(RULE_MANAGER.get())
 
     logger.info("Initializing plugins")
 
@@ -49,7 +49,7 @@ async def lifespan(app: FastAPI):
     PLUGIN_SERVICE.get().register_plugin(he_plugin)
 
     logger.info("Registering Hubitat Plugin's Routes")
-    he_router = APIRouter(prefix="/hubitat")
+    he_router = APIRouter(prefix="/hubitat", tags=["Plugins"])
     he_plugin.configure_routes(he_router)
     app.include_router(he_router)
     logger.info("Hubitat Plugin Initialized")
@@ -64,13 +64,17 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(lifespan=lifespan)
 
+# Register routers
+app.include_router(rpc_router)
+app.include_router(crud_router)
 
-@app.get("/")
+
+@app.get("/", tags=["General"])
 def root() -> str:
     return "🐇🤖 Cosmo Server"
 
 
-@app.get("/hello")
+@app.get("/hello", tags=["General"])
 def introduce_cosmo() -> str:
     return (
         "Hello, my name is Cosmo - I am the AI brain of your smart home. I can control "

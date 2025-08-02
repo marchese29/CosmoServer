@@ -41,3 +41,39 @@ class RuleCreateWithAction(RuleBase):
     """Convenience schema for creating a Rule with a new Action."""
 
     action: ActionCreate
+
+
+class InstalledRuleAction(BaseModel):
+    """Action details for an installed rule."""
+
+    id: str
+    name: str
+    description: str
+    action_code: str
+
+
+class InstalledRule(BaseModel):
+    """Schema for installed rule with full details including action code."""
+
+    rule_id: str
+    name: str
+    description: str
+    trigger: str
+    action: InstalledRuleAction | None = None
+
+
+class OrphanedRule(BaseModel):
+    """Schema for orphaned rule (running but not in database)."""
+
+    rule_id: str
+    name: str = "Unknown (orphaned task)"
+    description: str = "Rule not found in database"
+    trigger: str | None = None
+    action: InstalledRuleAction | None = None
+
+
+class InstalledRulesResponse(BaseModel):
+    """Response model for listing installed rules."""
+
+    message: str
+    installed_rules: list[InstalledRule | OrphanedRule]

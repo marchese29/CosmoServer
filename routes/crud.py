@@ -7,7 +7,7 @@ from database.models import Rule as RuleModel
 from models.actions import Action, ActionCreate, ActionUpdate
 from models.rules import Rule, RuleCreate, RuleCreateWithAction, RuleUpdate
 
-router = APIRouter()
+router = APIRouter(tags=["CRUD"])
 
 
 # Action CRUD operations
