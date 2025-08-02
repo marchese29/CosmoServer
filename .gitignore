@@ -12,6 +12,9 @@ wheels/
 # Dotenv file
 .env
 
+# Database files
+*.db
+
 # VS Code Things
 .vscode/
 

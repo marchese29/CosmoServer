@@ -12,6 +12,7 @@ dependencies = [
     "fastapi[standard]>=0.115.14",
     "mcp>=1.10.0",
     "pydantic>=2.11.7",
+    "sqlalchemy>=2.0.0",
     "strands-agents>=0.1.9",
     "strands-agents-tools>=0.1.7",
 ]
@@ -45,7 +46,9 @@ select = [
     "C4", # flake8-comprehensions
     "UP", # pyupgrade
 ]
-ignore = []
+ignore = [
+    "B008",  # Do not perform function call in argument defaults - FastAPI Depends() is safe
+]
 
 [tool.ruff.format]
 quote-style = "double"

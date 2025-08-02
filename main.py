@@ -8,6 +8,9 @@ from cosmohubitatplugin import HubitatPlugin
 from dotenv import load_dotenv
 from fastapi import APIRouter, FastAPI
 
+from database import engine
+from database.base import Base
+from routes.crud import router as crud_router
 from util import AsyncCreatable, InitItem
 
 load_dotenv()
@@ -19,6 +22,16 @@ RULE_MANAGER: InitItem[RuleManager] = InitItem()
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    logger.info("Initializing Database")
+    # Create database tables
+    Base.metadata.create_all(bind=engine)
+    logger.info("Database initialized")
+
+    logger.info("Setting up CRUD routers")
+    # Register our custom CRUD router
+    app.include_router(crud_router)
+    logger.info("CRUD routers registered")
+
     logger.info("Initializing Core Cosmo Components")
     cosmo_engine = ConditionEngine()
     PLUGIN_SERVICE.initialize(PluginService(cosmo_engine))
