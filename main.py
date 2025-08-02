@@ -1,32 +1,52 @@
 import logging
-from contextlib import ExitStack, asynccontextmanager
-from typing import Annotated
+from contextlib import asynccontextmanager
 
+from cosmo.engine.core import ConditionEngine
+from cosmo.plugin.service import PluginService
+from cosmo.rules.manager import RuleManager
+from cosmohubitatplugin import HubitatPlugin
 from dotenv import load_dotenv
-from fastapi import Depends, FastAPI
-from strands import Agent
+from fastapi import APIRouter, FastAPI
 
-from agent import get_complex_agent, get_simple_agent, initialize_agents
-from mcps import MCPServer
-from models.api import CosmoRequest
-from util import strip_xml_tags
+from util import AsyncCreatable, InitItem
 
 load_dotenv()
 logger = logging.getLogger(__name__)
 
+PLUGIN_SERVICE: InitItem[PluginService] = InitItem()
+RULE_MANAGER: InitItem[RuleManager] = InitItem()
+
 
 @asynccontextmanager
-async def lifespan(_: FastAPI):
-    with ExitStack() as stack:
-        # Initialize the MCP Server processes
-        for server in MCPServer:
-            stack.enter_context(server.client())  # type: ignore
+async def lifespan(app: FastAPI):
+    logger.info("Initializing Core Cosmo Components")
+    cosmo_engine = ConditionEngine()
+    PLUGIN_SERVICE.initialize(PluginService(cosmo_engine))
+    RULE_MANAGER.initialize(RuleManager(cosmo_engine, PLUGIN_SERVICE.get()))
+    logger.info("Core components initialized")
 
-        # Initialize the agents
-        initialize_agents()
+    logger.info("Initializing plugins")
 
-        # Setup is complete
-        yield
+    # For now, the hubitat plugin is special and loaded directly
+    logger.info("Initializing Hubitat Plugin")
+    if isinstance(HubitatPlugin, AsyncCreatable):
+        he_plugin = await HubitatPlugin.create()
+    else:
+        he_plugin = HubitatPlugin()  # type: ignore
+    PLUGIN_SERVICE.get().register_plugin(he_plugin)
+
+    logger.info("Registering Hubitat Plugin's Routes")
+    he_router = APIRouter(prefix="/hubitat")
+    he_plugin.configure_routes(he_router)
+    app.include_router(he_router)
+    logger.info("Hubitat Plugin Initialized")
+
+    logger.info("All plugins initialized")
+
+    logger.info("Initialization Complete, Starting Server...")
+    yield
+
+    # TODO: Cleanup
 
 
 app = FastAPI(lifespan=lifespan)
@@ -43,28 +63,3 @@ def introduce_cosmo() -> str:
         "Hello, my name is Cosmo - I am the AI brain of your smart home. I can control "
         "the devices in your smart home, curate scenes, and manage automations."
     )
-
-
-@app.post("/simple")
-async def handle_simple_request(
-    request: CosmoRequest, agent: Annotated[Agent, Depends(get_simple_agent)]
-) -> str:
-    """Endpoint for simple home control requests using only Hubitat MCP."""
-    resp = agent(request.message)
-    raw_response = resp.message["content"][0]["text"]  # type: ignore
-    return strip_xml_tags(raw_response)
-
-
-@app.post("/complex")
-async def handle_complex_request(
-    request: CosmoRequest, agent: Annotated[Agent, Depends(get_complex_agent)]
-) -> str:
-    """Endpoint for complex requests including rules, scenes, and advanced automation."""
-    resp = agent(request.message)
-    raw_response = resp.message["content"][0]["text"]  # type: ignore
-    return strip_xml_tags(raw_response)
-
-
-########################
-# TODO: Direct Control #
-########################

@@ -1,6 +1,7 @@
 import os
 import re
 from enum import StrEnum
+from typing import Protocol, Self, runtime_checkable
 
 
 class InitItem[T]:
@@ -15,6 +16,14 @@ class InitItem[T]:
     def get(self) -> T:
         assert self._item is not None
         return self._item
+
+
+@runtime_checkable
+class AsyncCreatable(Protocol):
+    """Defines a class that can be instantiated by invoking an async 'create' method"""
+
+    @classmethod
+    async def create(cls: type[Self]) -> Self: ...
 
 
 class EnvKey(StrEnum):

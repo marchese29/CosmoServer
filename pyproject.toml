@@ -6,6 +6,8 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "boto3>=1.38.45",
+    "cosmocore",
+    "cosmohubitatplugin",
     "dotenv>=0.9.9",
     "fastapi[standard]>=0.115.14",
     "mcp>=1.10.0",
@@ -53,3 +55,7 @@ line-ending = "auto"
 
 [tool.ruff.lint.isort]
 known-first-party = ["cosmoserver"]
+
+[tool.uv.sources]
+cosmocore = { git = "https://github.com/marchese29/CosmoCore" }
+cosmohubitatplugin = { git = "https://github.com/marchese29/CosmoHubitatPlugin" }
