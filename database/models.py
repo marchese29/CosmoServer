@@ -1,4 +1,4 @@
-from sqlalchemy import ForeignKey, String, Text
+from sqlalchemy import Boolean, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from database.base import Base, UUIDTimestampMixin
@@ -28,6 +28,7 @@ class Rule(Base, UUIDTimestampMixin):
     action_id: Mapped[str] = mapped_column(
         String, ForeignKey("actions.id"), nullable=False
     )
+    is_suspended: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
 
     # Relationship to the action this rule uses
     action: Mapped[Action] = relationship("Action", back_populates="rules")

@@ -19,6 +19,7 @@ from models.rules import (
     InstalledRuleAction,
     InstalledRulesResponse,
     OrphanedRule,
+    Rule,
 )
 
 router = APIRouter(tags=["RPC"])
@@ -85,11 +86,16 @@ def install_rule(
         else:
             raise HTTPException(status_code=400, detail=f"Unknown rule type: {rule_type}")
 
+        # If the rule is suspended, mark it as suspended in the rule manager
+        if db_rule.is_suspended:
+            rule_manager.suspend_rule(rule_id)
+
         return {
             "message": f"Rule '{db_rule.name}' installed successfully",
             "rule_id": rule_id,
             "rule_type": rule_type,
             "task_name": task.get_name(),
+            "is_suspended": db_rule.is_suspended,
         }
 
     except NotImplementedError as e:
@@ -142,18 +148,41 @@ def uninstall_rule(
 
 @router.get("/rules/installed", response_model=InstalledRulesResponse)
 def list_installed_rules(
+    status_filter: str | None = None,
     rule_manager: RuleManager = Depends(get_rule_manager),
     db: Session = Depends(get_db),
 ):
-    """List all currently installed rules with their complete details."""
+    """List all currently installed rules with their complete details.
+
+    Args:
+        status_filter: Optional filter by suspension status.
+                      "suspended" for only suspended rules,
+                      "running" for only non-suspended rules,
+                      "orphaned" for only orphaned rules (running but not in database),
+                      None for all rules (default)
+    """
     try:
+        # Validate status_filter parameter
+        if status_filter is not None and status_filter not in [
+            "suspended",
+            "running",
+            "orphaned",
+        ]:
+            raise HTTPException(
+                status_code=400,
+                detail=(
+                    "status_filter must be 'suspended', 'running', 'orphaned', or None"
+                ),
+            )
+
         # Get all rule IDs from RuleManager
         installed_rule_ids = rule_manager.get_all_rules()
 
         if not installed_rule_ids:
-            return InstalledRulesResponse(
-                message="No rules currently installed", installed_rules=[]
-            )
+            message = "No rules currently installed"
+            if status_filter:
+                message = f"No {status_filter} rules currently installed"
+            return InstalledRulesResponse(message=message, installed_rules=[])
 
         # Single batch query with eager loading for actions
         db_rules = (
@@ -182,26 +211,131 @@ def list_installed_rules(
                         action_code=db_rule.action.action_code,
                     )
 
-                installed_rules.append(
-                    InstalledRule(
-                        rule_id=db_rule.id,
-                        name=db_rule.name,
-                        description=db_rule.description,
-                        trigger=db_rule.trigger,
-                        action=action_data,
-                    )
+                rule_item = InstalledRule(
+                    rule_id=db_rule.id,
+                    name=db_rule.name,
+                    description=db_rule.description,
+                    trigger=db_rule.trigger,
+                    is_suspended=db_rule.is_suspended,
+                    action=action_data,
                 )
-            else:
-                # Orphaned task
-                installed_rules.append(OrphanedRule(rule_id=rule_id))
 
-        return InstalledRulesResponse(
-            message="Currently installed rules", installed_rules=installed_rules
-        )
+                # Apply filtering for database rules
+                if status_filter is None:
+                    installed_rules.append(rule_item)
+                elif status_filter == "suspended" and db_rule.is_suspended:
+                    installed_rules.append(rule_item)
+                elif status_filter == "running" and not db_rule.is_suspended:
+                    installed_rules.append(rule_item)
+                # Exclude database rules when filtering for orphaned rules
+            else:
+                # Orphaned task - include if no filter or specifically requesting orphaned
+                if status_filter is None or status_filter == "orphaned":
+                    installed_rules.append(OrphanedRule(rule_id=rule_id))
+
+        # Generate appropriate message
+        if status_filter is None:
+            message = "Currently installed rules"
+        else:
+            message = f"Currently installed {status_filter} rules"
+
+        return InstalledRulesResponse(message=message, installed_rules=installed_rules)
 
     except Exception as e:
         raise HTTPException(
             status_code=500, detail=f"Failed to list installed rules: {str(e)}"
+        ) from e
+
+
+@router.post("/rules/{rule_id}/suspend", response_model=Rule)
+def suspend_rule(
+    rule_id: str,
+    db: Session = Depends(get_db),
+    rule_manager: RuleManager = Depends(get_rule_manager),
+):
+    """Suspend a rule from executing its actions.
+
+    Args:
+        rule_id: The ID of the rule to suspend
+        db: Database session
+        rule_manager: Rule manager instance
+
+    Returns:
+        The updated rule object
+
+    Raises:
+        HTTPException: If rule not found or suspension fails
+    """
+    # Fetch the rule from the database
+    db_rule = db.query(RuleModel).filter(RuleModel.id == rule_id).first()
+
+    if db_rule is None:
+        raise HTTPException(status_code=404, detail="Rule not found")
+
+    if db_rule.is_suspended:
+        raise HTTPException(status_code=400, detail="Rule is already suspended")
+
+    try:
+        # Update database
+        db_rule.is_suspended = True
+        db.commit()
+        db.refresh(db_rule)
+
+        # Update rule manager if rule is currently installed
+        rule_manager.suspend_rule(rule_id)
+
+        return db_rule
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500, detail=f"Failed to suspend rule: {str(e)}"
+        ) from e
+
+
+@router.post("/rules/{rule_id}/resume", response_model=Rule)
+def resume_rule(
+    rule_id: str,
+    db: Session = Depends(get_db),
+    rule_manager: RuleManager = Depends(get_rule_manager),
+):
+    """Resume a suspended rule.
+
+    Args:
+        rule_id: The ID of the rule to resume
+        db: Database session
+        rule_manager: Rule manager instance
+
+    Returns:
+        The updated rule object
+
+    Raises:
+        HTTPException: If rule not found or resumption fails
+    """
+    # Fetch the rule from the database
+    db_rule = db.query(RuleModel).filter(RuleModel.id == rule_id).first()
+
+    if db_rule is None:
+        raise HTTPException(status_code=404, detail="Rule not found")
+
+    if not db_rule.is_suspended:
+        raise HTTPException(status_code=400, detail="Rule is not suspended")
+
+    try:
+        # Update database
+        db_rule.is_suspended = False
+        db.commit()
+        db.refresh(db_rule)
+
+        # Update rule manager if rule is currently installed
+        rule_manager.resume_rule(rule_id)
+
+        return db_rule
+
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(
+            status_code=500, detail=f"Failed to resume rule: {str(e)}"
         ) from e
 
 

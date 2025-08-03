@@ -91,3 +91,7 @@ def _install_single_rule(
 
     else:
         raise ValueError(f"Unknown rule type: {rule_type}")
+
+    # If the rule is suspended, mark it as suspended in the rule manager
+    if db_rule.is_suspended:
+        rule_manager.suspend_rule(db_rule.id)

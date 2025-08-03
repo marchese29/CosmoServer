@@ -11,6 +11,7 @@ class RuleBase(BaseModel):
     name: str
     description: str
     trigger: str
+    is_suspended: bool = False
 
 
 class RuleCreate(RuleBase):
@@ -19,9 +20,12 @@ class RuleCreate(RuleBase):
     action_id: str
 
 
-class RuleUpdate(RuleBase):
+class RuleUpdate(BaseModel):
     """Schema for updating a Rule."""
 
+    name: str
+    description: str
+    trigger: str
     action_id: str
 
 
@@ -59,6 +63,7 @@ class InstalledRule(BaseModel):
     name: str
     description: str
     trigger: str
+    is_suspended: bool = False
     action: InstalledRuleAction | None = None
 
 
