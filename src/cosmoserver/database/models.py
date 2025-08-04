@@ -1,7 +1,7 @@
 from sqlalchemy import Boolean, ForeignKey, String, Text
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
-from database.base import Base, UUIDTimestampMixin
+from .base import Base, UUIDTimestampMixin
 
 
 class Action(Base, UUIDTimestampMixin):

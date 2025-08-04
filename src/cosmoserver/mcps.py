@@ -4,8 +4,8 @@ from typing import cast
 from mcp import StdioServerParameters, stdio_client
 from strands.tools.mcp import MCPAgentTool, MCPClient
 
-import util
-from util import EnvKey
+from . import util
+from .util import EnvKey
 
 
 class MCPServer(Enum):

@@ -17,7 +17,7 @@ def _get_safe_namespace() -> dict[str, object]:
     Returns:
         Dictionary containing allowed imports and utilities
     """
-    from main import PLUGIN_SERVICE
+    from .main import PLUGIN_SERVICE
 
     # Start with standard library and cosmo core types
     namespace = {
@@ -85,7 +85,7 @@ def _validate_function_parameters(func: Callable, function_name: str) -> None:
     Raises:
         ValueError: If function parameters don't meet requirements
     """
-    from main import PLUGIN_SERVICE
+    from .main import PLUGIN_SERVICE
 
     signature = inspect.signature(func)
     type_hints = get_type_hints(func)
@@ -135,6 +135,8 @@ def _validate_function_parameters(func: Callable, function_name: str) -> None:
             # CosmoUtils is always available
             continue
         else:
+            from .main import PLUGIN_SERVICE
+
             plugin_service = PLUGIN_SERVICE.get()
             utility = plugin_service.util_for_type(type_hint)
             if utility is None:

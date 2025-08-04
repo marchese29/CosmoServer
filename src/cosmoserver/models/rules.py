@@ -2,7 +2,7 @@ from datetime import datetime
 
 from pydantic import BaseModel, ConfigDict
 
-from models.actions import Action, ActionCreate
+from .actions import Action, ActionCreate
 
 
 class RuleBase(BaseModel):

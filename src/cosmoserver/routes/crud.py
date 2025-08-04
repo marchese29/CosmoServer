@@ -1,11 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 
-from database import get_db
-from database.models import Action as ActionModel
-from database.models import Rule as RuleModel
-from models.actions import Action, ActionCreate, ActionUpdate
-from models.rules import Rule, RuleCreate, RuleCreateWithAction, RuleUpdate
+from ..database import get_db
+from ..database.models import Action as ActionModel
+from ..database.models import Rule as RuleModel
+from ..models.actions import Action, ActionCreate, ActionUpdate
+from ..models.rules import Rule, RuleCreate, RuleCreateWithAction, RuleUpdate
 
 router = APIRouter(tags=["CRUD"])
 

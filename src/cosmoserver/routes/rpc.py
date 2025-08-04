@@ -5,16 +5,16 @@ from cosmo.rules.model import TimerRule, TriggerRule
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session, joinedload
 
-from database import get_db
-from database.models import Action as ActionModel
-from database.models import Rule as RuleModel
-from exec_utils import (
+from ..database import get_db
+from ..database.models import Action as ActionModel
+from ..database.models import Rule as RuleModel
+from ..exec_utils import (
     compile_action_function,
     compile_time_provider,
     compile_trigger_function,
     detect_rule_type,
 )
-from models.rules import (
+from ..models.rules import (
     InstalledRule,
     InstalledRuleAction,
     InstalledRulesResponse,
@@ -27,7 +27,7 @@ router = APIRouter(tags=["RPC"])
 
 def get_rule_manager() -> RuleManager:
     """Dependency to get the rule manager instance."""
-    from main import RULE_MANAGER
+    from ..main import RULE_MANAGER
 
     return RULE_MANAGER.get()
 

@@ -4,8 +4,8 @@ import boto3
 from strands import Agent
 from strands.models import BedrockModel
 
-from mcps import MCPServer
-from util import EnvKey, InitItem, get_env_required
+from ..mcps import MCPServer
+from ..util import EnvKey, InitItem, get_env_required
 
 # The agent instances
 _SIMPLE_AGENT: InitItem[Agent] = InitItem()

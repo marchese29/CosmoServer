@@ -4,7 +4,7 @@ from collections.abc import Generator
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
-from util import EnvKey, get_user_data_dir
+from ..util import EnvKey, get_user_data_dir
 
 
 # Get database URL from environment, default to SQLite in user data directory

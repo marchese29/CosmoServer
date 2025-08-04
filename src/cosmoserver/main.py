@@ -8,12 +8,12 @@ from cosmohubitatplugin import HubitatPlugin
 from dotenv import load_dotenv
 from fastapi import APIRouter, FastAPI
 
-from database import engine
-from database.base import Base
-from routes.crud import router as crud_router
-from routes.rpc import router as rpc_router
-from startup import auto_install_database_rules
-from util import AsyncCreatable, InitItem
+from .database import engine
+from .database.base import Base
+from .routes.crud import router as crud_router
+from .routes.rpc import router as rpc_router
+from .startup import auto_install_database_rules
+from .util import AsyncCreatable, InitItem
 
 load_dotenv()
 logger = logging.getLogger(__name__)

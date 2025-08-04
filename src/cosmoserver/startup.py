@@ -6,9 +6,9 @@ from cosmo.rules.manager import RuleManager
 from cosmo.rules.model import TimerRule, TriggerRule
 from sqlalchemy.orm import Session, sessionmaker
 
-from database import engine
-from database.models import Rule as RuleModel
-from exec_utils import (
+from .database import engine
+from .database.models import Rule as RuleModel
+from .exec_utils import (
     compile_action_function,
     compile_time_provider,
     compile_trigger_function,
