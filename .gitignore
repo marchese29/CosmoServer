@@ -15,6 +15,9 @@ wheels/
 # Database files
 *.db
 
+# Plugin system files
+pyproject.bundled.toml
+
 # VS Code Things
 .vscode/
 

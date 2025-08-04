@@ -4,16 +4,16 @@ from contextlib import asynccontextmanager
 from cosmo.engine.core import ConditionEngine
 from cosmo.plugin.service import PluginService
 from cosmo.rules.manager import RuleManager
-from cosmohubitatplugin import HubitatPlugin
 from dotenv import load_dotenv
-from fastapi import APIRouter, FastAPI
+from fastapi import FastAPI
 
 from .database import engine
 from .database.base import Base
+from .plugins.loader import load_all_plugins_from_database
 from .routes.crud import router as crud_router
 from .routes.rpc import router as rpc_router
 from .startup import auto_install_database_rules
-from .util import AsyncCreatable, InitItem
+from .util import InitItem
 
 load_dotenv()
 logger = logging.getLogger(__name__)
@@ -38,23 +38,9 @@ async def lifespan(app: FastAPI):
     # Auto-install database rules
     auto_install_database_rules(RULE_MANAGER.get())
 
-    logger.info("Initializing plugins")
-
-    # For now, the hubitat plugin is special and loaded directly
-    logger.info("Initializing Hubitat Plugin")
-    if isinstance(HubitatPlugin, AsyncCreatable):
-        he_plugin = await HubitatPlugin.create()
-    else:
-        he_plugin = HubitatPlugin()  # type: ignore
-    PLUGIN_SERVICE.get().register_plugin(he_plugin)
-
-    logger.info("Registering Hubitat Plugin's Routes")
-    he_router = APIRouter(prefix="/hubitat", tags=["Plugins"])
-    he_plugin.configure_routes(he_router)
-    app.include_router(he_router)
-    logger.info("Hubitat Plugin Initialized")
-
-    logger.info("All plugins initialized")
+    logger.info("Loading dynamic plugins from database")
+    await load_all_plugins_from_database(app)
+    logger.info("All plugins loaded")
 
     logger.info("Initialization Complete, Starting Server...")
     yield

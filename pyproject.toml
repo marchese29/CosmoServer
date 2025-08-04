@@ -11,7 +11,6 @@ requires-python = ">=3.12"
 dependencies = [
     "boto3>=1.38.45",
     "cosmocore",
-    "cosmohubitatplugin",
     "dotenv>=0.9.9",
     "fastapi[standard]>=0.115.14",
     "mcp>=1.10.0",
@@ -19,7 +18,11 @@ dependencies = [
     "sqlalchemy>=2.0.0",
     "strands-agents>=0.1.9",
     "strands-agents-tools>=0.1.7",
+    "tomlkit>=0.13.0",
 ]
+
+[project.scripts]
+cosmo-server = "cosmoserver.cli:cli_main"
 
 [tool.setuptools.packages.find]
 where = ["src"]
@@ -71,4 +74,3 @@ known-first-party = ["cosmoserver"]
 
 [tool.uv.sources]
 cosmocore = { git = "https://github.com/marchese29/CosmoCore" }
-cosmohubitatplugin = { git = "https://github.com/marchese29/CosmoHubitatPlugin" }

@@ -3,9 +3,12 @@ from sqlalchemy.orm import Session
 
 from ..database import get_db
 from ..database.models import Action as ActionModel
+from ..database.models import Plugin as PluginModel
 from ..database.models import Rule as RuleModel
 from ..models.actions import Action, ActionCreate, ActionUpdate
+from ..models.plugins import Plugin, PluginCreate, PluginUpdate
 from ..models.rules import Rule, RuleCreate, RuleCreateWithAction, RuleUpdate
+from ..plugins.utils import PluginDependencyConflictError, test_plugin_dependencies
 
 router = APIRouter(tags=["CRUD"])
 
@@ -139,25 +142,118 @@ def delete_rule(rule_id: str, db: Session = Depends(get_db)):
     return {"message": "Rule deleted successfully"}
 
 
+# Plugin CRUD operations
+@router.post("/plugins/", response_model=Plugin)
+async def create_plugin(plugin: PluginCreate, db: Session = Depends(get_db)):
+    """Create a new plugin with dependency conflict detection."""
+    # Create plugin record but don't commit yet
+    db_plugin = PluginModel(**plugin.model_dump())
+    db.add(db_plugin)
+
+    # Test dependencies with new plugin included
+    try:
+        await test_plugin_dependencies(db)
+    except PluginDependencyConflictError as e:
+        # Rollback and raise HTTP 409 Conflict
+        db.rollback()
+        raise HTTPException(
+            status_code=409, detail=f"Plugin dependency conflict: {str(e)}"
+        ) from e
+
+    # If testing passed, commit the plugin
+    db.commit()
+    db.refresh(db_plugin)
+    return db_plugin
+
+
+@router.get("/plugins/", response_model=list[Plugin])
+def list_plugins(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
+    """List all plugins."""
+    plugins = db.query(PluginModel).offset(skip).limit(limit).all()
+    return plugins
+
+
+@router.get("/plugins/{plugin_id}", response_model=Plugin)
+def get_plugin(plugin_id: str, db: Session = Depends(get_db)):
+    """Get a specific plugin by ID."""
+    plugin = db.query(PluginModel).filter(PluginModel.id == plugin_id).first()
+    if plugin is None:
+        raise HTTPException(status_code=404, detail="Plugin not found")
+    return plugin
+
+
+@router.put("/plugins/{plugin_id}", response_model=Plugin)
+async def update_plugin(
+    plugin_id: str, plugin: PluginUpdate, db: Session = Depends(get_db)
+):
+    """Update a plugin with version conflict detection."""
+    db_plugin = db.query(PluginModel).filter(PluginModel.id == plugin_id).first()
+    if db_plugin is None:
+        raise HTTPException(status_code=404, detail="Plugin not found")
+
+    # Only allow updating specific fields for safety
+    update_data = plugin.model_dump(exclude_unset=True)
+
+    # Apply updates to the model but don't commit yet
+    for field, value in update_data.items():
+        setattr(db_plugin, field, value)
+
+    # Test dependencies if version was updated
+    if "updated_version" in update_data and update_data["updated_version"]:
+        try:
+            await test_plugin_dependencies(db)
+        except PluginDependencyConflictError as e:
+            # Rollback and raise HTTP 409 Conflict
+            db.rollback()
+            raise HTTPException(
+                status_code=409, detail=f"Version conflict: {str(e)}"
+            ) from e
+
+    # If testing passed (or no version change), commit the update
+    db.commit()
+    db.refresh(db_plugin)
+    return db_plugin
+
+
+@router.delete("/plugins/{plugin_id}")
+def delete_plugin(plugin_id: str, db: Session = Depends(get_db)):
+    """Delete a plugin."""
+    db_plugin = db.query(PluginModel).filter(PluginModel.id == plugin_id).first()
+    if db_plugin is None:
+        raise HTTPException(status_code=404, detail="Plugin not found")
+
+    # TODO: Implement plugin cleanup logic
+    # This would handle:
+    # - Removing from bundled environment
+    # - Cleaning up plugin files from disk
+    # - Unregistering plugin routes and services
+    if False:  # This will be replaced with actual cleanup logic
+        raise NotImplementedError("Plugin cleanup not yet implemented")
+
+    db.delete(db_plugin)
+    db.commit()
+    return {"message": "Plugin deleted successfully"}
+
+
 # Convenience endpoint
 @router.post("/rules/create-with-action/", response_model=Rule)
 def create_rule_with_action(
     rule_data: RuleCreateWithAction, db: Session = Depends(get_db)
 ):
-    """Create a new rule with a new action in a single call."""
-    # First create the action
+    """Create a new rule with a new action."""
+    # Create the action
     db_action = ActionModel(**rule_data.action.model_dump())
     db.add(db_action)
+
+    # Create the rule and set the action relationship
+    rule_dict = rule_data.model_dump(exclude={"action"})
+    db_rule = RuleModel(**rule_dict)
+    db_rule.action = db_action
+
+    db.add(db_rule)
+
     db.commit()
     db.refresh(db_action)
-
-    # Then create the rule using the new action's ID
-    rule_dict = rule_data.model_dump(exclude={"action"})
-    rule_dict["action_id"] = db_action.id
-
-    db_rule = RuleModel(**rule_dict)
-    db.add(db_rule)
-    db.commit()
     db.refresh(db_rule)
 
     return db_rule
