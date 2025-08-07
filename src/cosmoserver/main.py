@@ -5,10 +5,11 @@ from cosmo.engine.core import ConditionEngine
 from cosmo.plugin.service import PluginService
 from cosmo.rules.manager import RuleManager
 from dotenv import load_dotenv
-from fastapi import FastAPI
+from fastapi import Depends, FastAPI
 
-from .database import engine
+from .database import engine, get_prefs
 from .database.base import Base
+from .database.prefs import PreferenceKeys, Preferences
 from .plugins.loader import load_all_plugins_from_database
 from .routes.crud import router as crud_router
 from .routes.preferences import router as preferences_router
@@ -70,8 +71,17 @@ def root() -> str:
 
 
 @app.get("/hello", tags=["General"])
-def introduce_cosmo() -> str:
-    return (
-        "Hello, my name is Cosmo - I am the AI brain of your smart home. I can control "
-        "the devices in your smart home, curate scenes, and manage automations."
-    )
+def introduce_cosmo(prefs: Preferences = Depends(get_prefs)) -> str:
+    user_name = prefs.get(PreferenceKeys.USER_NAME)
+    if user_name:
+        return (
+            f"Hello {user_name}, my name is Cosmo - I am the AI brain of your smart home."
+            " I can control the devices in your smart home, curate scenes, "
+            "and manage automations."
+        )
+    else:
+        return (
+            "Hello, my name is Cosmo - I am the AI brain of your smart home. "
+            "I can control the devices in your smart home, curate scenes, "
+            "and manage automations."
+        )

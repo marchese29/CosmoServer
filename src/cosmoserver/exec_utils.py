@@ -6,9 +6,11 @@ from collections.abc import Callable
 from datetime import datetime, timedelta
 from typing import cast, get_type_hints
 
-from cosmo.plugin.builtin import CosmoUtils
+from cosmo.plugin.builtin import LunarUtils, RuleUtils, SolarUtils
 from cosmo.plugin.model import AbstractCondition
 from cosmo.rules.model import RuleRoutine, RuleTimeProvider, RuleTriggerProvider
+
+from .plugins.cosmo_server.cosmo_utils import CosmoUtils
 
 
 def _get_safe_namespace() -> dict[str, object]:
@@ -25,6 +27,9 @@ def _get_safe_namespace() -> dict[str, object]:
         "timedelta": timedelta,
         "AbstractCondition": AbstractCondition,
         "CosmoUtils": CosmoUtils,
+        "RuleUtils": RuleUtils,
+        "SolarUtils": SolarUtils,
+        "LunarUtils": LunarUtils,
     }
 
     # Add all registered plugin utility types to the namespace
@@ -131,8 +136,8 @@ def _validate_function_parameters(func: Callable, function_name: str) -> None:
         seen_types.add(type_hint)
 
         # Validate plugin availability
-        if type_hint == CosmoUtils:
-            # CosmoUtils is always available
+        if type_hint == RuleUtils:
+            # RuleUtils is always available
             continue
         else:
             from .main import PLUGIN_SERVICE
