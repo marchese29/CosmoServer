@@ -5,6 +5,7 @@ from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from .base import Base, UUIDTimestampMixin
+from .prefs import Preference  # Import to register with SQLAlchemy metadata  # noqa: F401
 
 
 class PluginSourceType(str, Enum):

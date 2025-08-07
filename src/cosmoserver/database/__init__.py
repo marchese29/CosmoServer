@@ -1,10 +1,15 @@
 import os
 from collections.abc import Generator
+from typing import TYPE_CHECKING
 
+from fastapi import Depends
 from sqlalchemy import create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from ..util import EnvKey, get_user_data_dir
+
+if TYPE_CHECKING:
+    from .prefs import Preferences
 
 
 # Get database URL from environment, default to SQLite in user data directory
@@ -39,3 +44,10 @@ def get_db() -> Generator[Session, None, None]:
         session.commit()
     finally:
         session.close()
+
+
+def get_prefs(db: Session = Depends(get_db)) -> "Preferences":
+    """Dependency to get Preferences instance for FastAPI routes."""
+    from .prefs import Preferences
+
+    return Preferences(db)
