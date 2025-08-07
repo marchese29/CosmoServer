@@ -10,8 +10,6 @@ from cosmo.plugin.builtin import LunarUtils, RuleUtils, SolarUtils
 from cosmo.plugin.model import AbstractCondition
 from cosmo.rules.model import RuleRoutine, RuleTimeProvider, RuleTriggerProvider
 
-from .plugins.cosmo_server.cosmo_utils import CosmoUtils
-
 
 def _get_safe_namespace() -> dict[str, object]:
     """Create a safe execution namespace with pre-loaded imports.
@@ -26,13 +24,13 @@ def _get_safe_namespace() -> dict[str, object]:
         "datetime": datetime,
         "timedelta": timedelta,
         "AbstractCondition": AbstractCondition,
-        "CosmoUtils": CosmoUtils,
         "RuleUtils": RuleUtils,
         "SolarUtils": SolarUtils,
         "LunarUtils": LunarUtils,
     }
 
     # Add all registered plugin utility types to the namespace
+    # CosmoUtils are installed as a plugin so they get handled here
     plugin_service = PLUGIN_SERVICE.get()
     for util_type in plugin_service._utils.keys():
         namespace[util_type.__name__] = util_type
