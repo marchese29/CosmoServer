@@ -36,6 +36,13 @@ async def lifespan(app: FastAPI):
     RULE_MANAGER.initialize(RuleManager(cosmo_engine, PLUGIN_SERVICE.get()))
     logger.info("Core components initialized")
 
+    logger.info("Loading CosmoServerPlugin")
+    from .plugins.cosmo_server.cosmo_server_plugin import CosmoServerPlugin
+
+    cosmo_server_plugin = CosmoServerPlugin()
+    PLUGIN_SERVICE.get().register_plugin(cosmo_server_plugin)
+    logger.info("CosmoServerPlugin loaded")
+
     # Auto-install database rules
     auto_install_database_rules(RULE_MANAGER.get())
 
