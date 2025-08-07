@@ -12,6 +12,7 @@ from .database.base import Base
 from .database.prefs import PreferenceKeys, Preferences
 from .plugins.loader import load_all_plugins_from_database
 from .routes.crud import router as crud_router
+from .routes.globals import router as globals_router
 from .routes.preferences import router as preferences_router
 from .routes.rpc import router as rpc_router
 from .startup import auto_install_database_rules
@@ -63,6 +64,7 @@ app = FastAPI(lifespan=lifespan)
 app.include_router(rpc_router)
 app.include_router(crud_router)
 app.include_router(preferences_router)
+app.include_router(globals_router)
 
 
 @app.get("/", tags=["General"])

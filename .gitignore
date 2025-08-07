@@ -20,12 +20,3 @@ pyproject.bundled.toml
 
 # VS Code Things
 .vscode/
-
-# Roo Things
-.roomodes
-.roo/
-memory-bank/
-
-# Cline Things
-.clinerules
-.clineignore

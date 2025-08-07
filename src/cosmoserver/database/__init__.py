@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session, sessionmaker
 from ..util import EnvKey, get_user_data_dir
 
 if TYPE_CHECKING:
+    from .globals import GlobalVariables
     from .prefs import Preferences
 
 
@@ -51,3 +52,10 @@ def get_prefs(db: Session = Depends(get_db)) -> "Preferences":
     from .prefs import Preferences
 
     return Preferences(db)
+
+
+def get_globals(db: Session = Depends(get_db)) -> "GlobalVariables":
+    """Dependency to get GlobalVariables instance for FastAPI routes."""
+    from .globals import GlobalVariables
+
+    return GlobalVariables(db)

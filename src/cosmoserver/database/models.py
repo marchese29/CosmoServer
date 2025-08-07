@@ -1,6 +1,7 @@
 from enum import Enum
+from typing import Any
 
-from sqlalchemy import Boolean, ForeignKey, String, Text
+from sqlalchemy import JSON, Boolean, ForeignKey, String, Text
 from sqlalchemy import Enum as SQLEnum
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 
@@ -71,3 +72,12 @@ class Plugin(Base, UUIDTimestampMixin):
     )
     error_message: Mapped[str | None] = mapped_column(Text, nullable=True)
     python_package_name: Mapped[str | None] = mapped_column(String(255), nullable=True)
+
+
+class GlobalVariable(Base):
+    """SQLAlchemy model for storing global variables."""
+
+    __tablename__ = "global_variables"
+
+    key: Mapped[str] = mapped_column(String(255), primary_key=True)
+    value: Mapped[Any] = mapped_column(JSON, nullable=False)

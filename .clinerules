@@ -1,0 +1,9 @@
+## Build Preferences
+- All completed code must be type-checked via pyright with uv run
+- All completed code must be linted using ruff with uv run
+
+## Running the Server
+- The server can be started using the CLI script: `cosmo-server` (installed via the project's entry points)
+- Alternatively, run directly with: `uv run python -m cosmoserver.cli`
+- The server runs by default on http://127.0.0.1:8000 and supports development mode with `--dev` flag for auto-reload
+- Use `--clean` for running without bundled plugins or `--bundle-only` to create the plugin bundle without starting the server
